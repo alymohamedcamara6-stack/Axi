@@ -1,0 +1,1979 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="description" content="AXI Select Project - Gestionnaire de risque professionnel pour traders. Calcul automatique de l'allocation du capital selon les leviers AXI.">
+    <meta name="keywords" content="AXI Select, trading, forex, gestion risque, levier, money management">
+    <meta name="author" content="AXI Select Project">
+    <meta name="theme-color" content="#E31837">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>AXI Select Project | Risk Manager Pro</title>
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect fill='%23E31837' rx='20' width='100' height='100'/%3E%3Ctext x='50' y='68' font-family='Arial' font-size='50' font-weight='bold' fill='white' text-anchor='middle'%3EAXI%3C/text%3E%3C/svg%3E">
+    
+    <!-- Preconnect -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com">
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    
+    <style>
+        /* CSS Critical Inline */
+        :root {
+            --axi-red: #E31837;
+            --axi-red-dark: #B7142C;
+            --axi-black: #0A0A0A;
+            --axi-dark: #111111;
+            --axi-gray-900: #1A1A1A;
+            --axi-gray-800: #222222;
+            --axi-gray-700: #333333;
+            --axi-gray-500: #666666;
+            --axi-gray-400: #888888;
+            --axi-white: #FFFFFF;
+            --success: #00C853;
+            --warning: #FFB300;
+            --danger: #FF1744;
+            --info: #2979FF;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        html {
+            font-size: 16px;
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--axi-black);
+            color: var(--axi-white);
+            line-height: 1.5;
+            min-height: 100vh;
+            overflow-x: hidden;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* Loading Screen */
+        #loader {
+            position: fixed;
+            inset: 0;
+            background: var(--axi-black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s ease, visibility 0.5s ease;
+        }
+
+        #loader.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader-logo {
+            width: 80px;
+            height: 80px;
+            background: var(--axi-red);
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: 800;
+            animation: pulse 1.5s infinite;
+            margin-bottom: 20px;
+        }
+
+        .loader-text {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: var(--axi-gray-400);
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(0.95); opacity: 0.8; }
+        }
+
+        /* App Layout */
+        .app {
+            display: none;
+            min-height: 100vh;
+        }
+
+        .app.loaded {
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(10, 10, 10, 0.98);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--axi-gray-800);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            z-index: 100;
+        }
+
+        @media (min-width: 1024px) {
+            .header {
+                height: 70px;
+                padding: 0 32px;
+                position: sticky;
+            }
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--axi-red);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 14px;
+            box-shadow: 0 4px 20px rgba(227, 24, 55, 0.3);
+        }
+
+        @media (min-width: 1024px) {
+            .logo-icon {
+                width: 48px;
+                height: 48px;
+                font-size: 16px;
+            }
+        }
+
+        .logo-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .logo-brand {
+            font-size: 1.125rem;
+            font-weight: 700;
+        }
+
+        @media (min-width: 1024px) {
+            .logo-brand {
+                font-size: 1.25rem;
+            }
+        }
+
+        .logo-project {
+            font-size: 0.6875rem;
+            color: var(--axi-red);
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .menu-btn {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 10px;
+            color: var(--axi-white);
+            font-size: 1.125rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .menu-btn:hover, .menu-btn:active {
+            background: var(--axi-gray-800);
+        }
+
+        @media (min-width: 1024px) {
+            .menu-btn {
+                display: none;
+            }
+        }
+
+        /* Navigation */
+        .nav-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 99;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .nav-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .nav-drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 85%;
+            max-width: 320px;
+            height: 100%;
+            background: var(--axi-dark);
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            z-index: 101;
+        }
+
+        .nav-overlay.active .nav-drawer {
+            transform: translateX(0);
+        }
+
+        @media (min-width: 1024px) {
+            .nav-overlay {
+                position: static;
+                opacity: 1;
+                visibility: visible;
+                background: none;
+                backdrop-filter: none;
+                width: 280px;
+                flex-shrink: 0;
+            }
+
+            .nav-drawer {
+                position: static;
+                transform: none;
+                width: 100%;
+                height: auto;
+                border-right: 1px solid var(--axi-gray-800);
+            }
+        }
+
+        .nav-header {
+            padding: 20px;
+            border-bottom: 1px solid var(--axi-gray-800);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (min-width: 1024px) {
+            .nav-header {
+                display: none;
+            }
+        }
+
+        .nav-close {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 10px;
+            color: var(--axi-white);
+            font-size: 1.125rem;
+            cursor: pointer;
+        }
+
+        .nav-items {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+
+        @media (min-width: 1024px) {
+            .nav-items {
+                padding: 24px 16px;
+            }
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 16px;
+            border-radius: 12px;
+            color: var(--axi-gray-400);
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-bottom: 8px;
+        }
+
+        .nav-item:hover {
+            background: var(--axi-gray-900);
+            color: var(--axi-white);
+        }
+
+        .nav-item.active {
+            background: var(--axi-red);
+            color: var(--axi-white);
+            box-shadow: 0 4px 20px rgba(227, 24, 55, 0.3);
+        }
+
+        .nav-icon {
+            width: 24px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main {
+            flex: 1;
+            padding-top: 60px;
+        }
+
+        @media (min-width: 1024px) {
+            .main {
+                padding-top: 0;
+            }
+        }
+
+        .content {
+            padding: 16px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        @media (min-width: 768px) {
+            .content {
+                padding: 24px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .content {
+                padding: 32px;
+            }
+        }
+
+        /* Page Title */
+        .page-header {
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 1024px) {
+            .page-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 32px;
+            }
+        }
+
+        .page-title h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        @media (min-width: 768px) {
+            .page-title h1 {
+                font-size: 1.875rem;
+            }
+        }
+
+        .page-title p {
+            color: var(--axi-gray-500);
+            font-size: 0.875rem;
+        }
+
+        /* Market Badge */
+        .market-badge {
+            display: none;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 10px;
+        }
+
+        @media (min-width: 1024px) {
+            .market-badge {
+                display: flex;
+            }
+        }
+
+        .market-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--success);
+            border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+
+        .market-text {
+            font-size: 0.875rem;
+            color: var(--axi-gray-400);
+        }
+
+        .market-text strong {
+            color: var(--success);
+            font-weight: 600;
+        }
+
+        /* Alerts */
+        .alert {
+            display: none;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 16px;
+            border-radius: 12px;
+            margin-bottom: 16px;
+            animation: slideDown 0.3s ease;
+        }
+
+        @media (min-width: 768px) {
+            .alert {
+                padding: 20px;
+            }
+        }
+
+        .alert.show {
+            display: flex;
+        }
+
+        @keyframes slideDown {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .alert-danger {
+            background: rgba(255, 23, 68, 0.1);
+            border: 1px solid var(--danger);
+        }
+
+        .alert-warning {
+            background: rgba(255, 179, 0, 0.1);
+            border: 1px solid var(--warning);
+        }
+
+        .alert-success {
+            background: rgba(0, 200, 83, 0.1);
+            border: 1px solid var(--success);
+        }
+
+        .alert-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 0.875rem;
+        }
+
+        .alert-danger .alert-icon { background: var(--danger); color: white; }
+        .alert-warning .alert-icon { background: var(--warning); color: var(--axi-black); }
+        .alert-success .alert-icon { background: var(--success); color: white; }
+
+        .alert-content h4 {
+            font-weight: 600;
+            margin-bottom: 4px;
+            font-size: 0.9375rem;
+        }
+
+        .alert-danger h4 { color: var(--danger); }
+        .alert-warning h4 { color: var(--warning); }
+        .alert-success h4 { color: var(--success); }
+
+        .alert-content p {
+            color: var(--axi-gray-400);
+            font-size: 0.8125rem;
+            line-height: 1.5;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        @media (min-width: 640px) {
+            .stats-grid {
+                grid-template-columns: repeat(4, 1fr);
+                gap: 16px;
+            }
+        }
+
+        @media (min-width: 1024px) {
+            .stats-grid {
+                gap: 24px;
+                margin-bottom: 32px;
+            }
+        }
+
+        .stat-card {
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 16px;
+            padding: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .stat-card {
+                padding: 24px;
+            }
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--axi-gray-700);
+        }
+
+        .stat-card.danger::before { background: var(--danger); }
+        .stat-card.warning::before { background: var(--warning); }
+        .stat-card.success::before { background: var(--success); }
+        .stat-card.info::before { background: var(--axi-red); }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .stat-label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--axi-gray-500);
+            font-weight: 600;
+        }
+
+        .stat-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--axi-black);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--axi-gray-400);
+            font-size: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .stat-icon {
+                width: 44px;
+                height: 44px;
+                font-size: 1.25rem;
+            }
+        }
+
+        .stat-card.info .stat-icon {
+            background: rgba(227, 24, 55, 0.15);
+            color: var(--axi-red);
+        }
+
+        .stat-value {
+            font-size: 1.25rem;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        @media (min-width: 768px) {
+            .stat-value {
+                font-size: 1.75rem;
+            }
+        }
+
+        @media (min-width: 1280px) {
+            .stat-value {
+                font-size: 2rem;
+            }
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            color: var(--axi-gray-500);
+        }
+
+        .stat-change.positive { color: var(--success); }
+        .stat-change.negative { color: var(--danger); }
+
+        /* Cards */
+        .card {
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 16px;
+            margin-bottom: 16px;
+            overflow: hidden;
+        }
+
+        @media (min-width: 768px) {
+            .card {
+                border-radius: 20px;
+                margin-bottom: 24px;
+            }
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px 20px;
+            border-bottom: 1px solid var(--axi-gray-800);
+        }
+
+        @media (min-width: 768px) {
+            .card-header {
+                padding: 20px 24px;
+            }
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        @media (min-width: 768px) {
+            .card-title {
+                font-size: 1.125rem;
+            }
+        }
+
+        .card-icon {
+            width: 36px;
+            height: 36px;
+            background: var(--axi-red);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.875rem;
+            box-shadow: 0 4px 20px rgba(227, 24, 55, 0.3);
+        }
+
+        .card-body {
+            padding: 20px;
+        }
+
+        @media (min-width: 768px) {
+            .card-body {
+                padding: 24px;
+            }
+        }
+
+        /* Forms */
+        .form-grid {
+            display: grid;
+            gap: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .form-grid {
+                grid-template-columns: repeat(3, 1fr);
+                gap: 20px;
+            }
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .form-label {
+            font-size: 0.6875rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--axi-gray-500);
+            font-weight: 600;
+        }
+
+        .form-input {
+            padding: 14px 16px;
+            background: var(--axi-black);
+            border: 2px solid var(--axi-gray-800);
+            border-radius: 12px;
+            color: var(--axi-white);
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.2s ease;
+            width: 100%;
+        }
+
+        @media (min-width: 768px) {
+            .form-input {
+                padding: 16px;
+                font-size: 1.125rem;
+            }
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: var(--axi-red);
+            background: var(--axi-dark);
+        }
+
+        .form-input.readonly {
+            background: rgba(0, 200, 83, 0.1);
+            border-color: var(--success);
+            color: var(--success);
+        }
+
+        /* Buttons */
+        .btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 12px 20px;
+            border-radius: 10px;
+            font-family: inherit;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: none;
+            text-decoration: none;
+        }
+
+        @media (min-width: 768px) {
+            .btn {
+                padding: 14px 24px;
+                font-size: 0.9375rem;
+            }
+        }
+
+        .btn:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--axi-red);
+            color: var(--axi-white);
+            box-shadow: 0 4px 20px rgba(227, 24, 55, 0.3);
+        }
+
+        .btn-primary:hover {
+            background: #ff1f3f;
+            box-shadow: 0 6px 24px rgba(227, 24, 55, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--axi-gray-800);
+            color: var(--axi-white);
+            border: 1px solid var(--axi-gray-700);
+        }
+
+        .btn-secondary:hover {
+            background: var(--axi-gray-700);
+        }
+
+        .btn-ghost {
+            background: transparent;
+            color: var(--axi-gray-400);
+            padding: 8px 12px;
+        }
+
+        .btn-ghost:hover {
+            color: var(--axi-white);
+            background: var(--axi-gray-900);
+        }
+
+        .btn-sm {
+            padding: 8px 16px;
+            font-size: 0.8125rem;
+        }
+
+        /* Asset Cards */
+        .asset-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .asset-card {
+            background: var(--axi-black);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 12px;
+            padding: 16px;
+            position: relative;
+        }
+
+        @media (min-width: 768px) {
+            .asset-card {
+                padding: 20px;
+            }
+        }
+
+        .asset-remove {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 8px;
+            color: var(--danger);
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .asset-remove:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .asset-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+            padding-right: 40px;
+        }
+
+        .asset-symbol {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        @media (min-width: 768px) {
+            .asset-symbol {
+                font-size: 1.5rem;
+            }
+        }
+
+        .asset-type {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.625rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .asset-type.forex { background: rgba(41, 121, 255, 0.15); color: var(--info); }
+        .asset-type.metal { background: rgba(255, 179, 0, 0.15); color: var(--warning); }
+        .asset-type.index { background: rgba(0, 200, 83, 0.15); color: var(--success); }
+        .asset-type.crypto { background: rgba(255, 23, 68, 0.15); color: var(--danger); }
+
+        .asset-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        @media (min-width: 640px) {
+            .asset-grid {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .asset-field {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .asset-field-label {
+            font-size: 0.625rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--axi-gray-500);
+        }
+
+        .asset-field-value {
+            font-size: 0.9375rem;
+            font-weight: 600;
+        }
+
+        .asset-input {
+            padding: 10px 12px;
+            background: var(--axi-gray-900);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 8px;
+            color: var(--axi-white);
+            font-family: inherit;
+            font-size: 0.9375rem;
+            font-weight: 600;
+            width: 100%;
+        }
+
+        .asset-input:focus {
+            outline: none;
+            border-color: var(--axi-red);
+        }
+
+        .asset-results {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            padding-top: 16px;
+            border-top: 1px solid var(--axi-gray-800);
+        }
+
+        .asset-result {
+            text-align: center;
+        }
+
+        .asset-result-label {
+            font-size: 0.625rem;
+            color: var(--axi-gray-500);
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .asset-result-value {
+            font-size: 0.9375rem;
+            font-weight: 700;
+        }
+
+        @media (min-width: 768px) {
+            .asset-result-value {
+                font-size: 1.125rem;
+            }
+        }
+
+        /* Table (Desktop) */
+        .table-wrap {
+            overflow-x: auto;
+            display: none;
+        }
+
+        @media (min-width: 1024px) {
+            .table-wrap {
+                display: block;
+            }
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            padding: 16px;
+            text-align: left;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.625rem;
+            letter-spacing: 0.1em;
+            color: var(--axi-gray-500);
+            border-bottom: 1px solid var(--axi-gray-800);
+            white-space: nowrap;
+        }
+
+        .data-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--axi-gray-800);
+            vertical-align: middle;
+        }
+
+        .data-table tbody tr:hover {
+            background: var(--axi-black);
+        }
+
+        .table-input {
+            padding: 10px 12px;
+            background: var(--axi-black);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 8px;
+            color: var(--axi-white);
+            font-family: inherit;
+            width: 100%;
+            max-width: 120px;
+        }
+
+        .table-input:focus {
+            outline: none;
+            border-color: var(--axi-red);
+        }
+
+        /* Progress */
+        .progress-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .progress-item {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .progress-label {
+            font-size: 0.875rem;
+            color: var(--axi-gray-400);
+        }
+
+        .progress-value {
+            font-size: 0.9375rem;
+            font-weight: 700;
+        }
+
+        .progress-bar {
+            height: 8px;
+            background: var(--axi-gray-800);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            border-radius: 4px;
+            transition: all 0.5s ease;
+        }
+
+        /* Chart */
+        .chart-container {
+            position: relative;
+            height: 250px;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 300px;
+            }
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 48px 24px;
+        }
+
+        @media (min-width: 768px) {
+            .empty-state {
+                padding: 64px 24px;
+            }
+        }
+
+        .empty-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: var(--axi-gray-800);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2.5rem;
+        }
+
+        .empty-state h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .empty-state p {
+            color: var(--axi-gray-500);
+            font-size: 0.9375rem;
+            max-width: 400px;
+            margin: 0 auto 24px;
+        }
+
+        /* Modal */
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 200;
+            display: none;
+            align-items: flex-end;
+            justify-content: center;
+        }
+
+        @media (min-width: 640px) {
+            .modal {
+                align-items: center;
+                padding: 24px;
+            }
+        }
+
+        .modal.active {
+            display: flex;
+        }
+
+        .modal-content {
+            background: var(--axi-gray-900);
+            border-radius: 20px 20px 0 0;
+            width: 100%;
+            max-height: 90vh;
+            overflow: hidden;
+            animation: slideUp 0.3s ease;
+        }
+
+        @media (min-width: 640px) {
+            .modal-content {
+                border-radius: 20px;
+                max-width: 600px;
+                max-height: 85vh;
+            }
+        }
+
+        @keyframes slideUp {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--axi-gray-800);
+        }
+
+        .modal-title {
+            font-size: 1.25rem;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--axi-black);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 10px;
+            color: var(--axi-white);
+            cursor: pointer;
+        }
+
+        .modal-body {
+            padding: 24px;
+            overflow-y: auto;
+            max-height: calc(90vh - 80px);
+        }
+
+        /* Asset Selector */
+        .asset-selector {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin-bottom: 24px;
+        }
+
+        @media (min-width: 640px) {
+            .asset-selector {
+                grid-template-columns: repeat(4, 1fr);
+            }
+        }
+
+        .asset-btn {
+            padding: 16px 8px;
+            background: var(--axi-black);
+            border: 1px solid var(--axi-gray-800);
+            border-radius: 12px;
+            color: var(--axi-white);
+            font-family: inherit;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .asset-btn:hover, .asset-btn.active {
+            background: var(--axi-gray-800);
+            border-color: var(--axi-red);
+        }
+
+        .asset-btn i {
+            font-size: 1.25rem;
+            color: var(--axi-gray-500);
+        }
+
+        .asset-btn:hover i, .asset-btn.active i {
+            color: var(--axi-red);
+        }
+
+        /* Two Column Layout */
+        .two-col {
+            display: grid;
+            gap: 16px;
+        }
+
+        @media (min-width: 1024px) {
+            .two-col {
+                grid-template-columns: 1.2fr 0.8fr;
+                gap: 24px;
+            }
+        }
+
+        /* Hide/Show */
+        .mobile-only { display: block; }
+        .desktop-only { display: none; }
+
+        @media (min-width: 1024px) {
+            .mobile-only { display: none !important; }
+            .desktop-only { display: block !important; }
+        }
+
+        /* Print Styles */
+        @media print {
+            .header, .nav-overlay, .modal, .btn { display: none !important; }
+            .card { break-inside: avoid; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Loader -->
+    <div id="loader">
+        <div class="loader-logo">AXI</div>
+        <div class="loader-text">Select Project</div>
+    </div>
+
+    <!-- App -->
+    <div class="app" id="app">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <div class="logo-icon">AXI</div>
+                <div class="logo-text">
+                    <span class="logo-brand">AXI Select</span>
+                    <span class="logo-project">PROJECT</span>
+                </div>
+            </div>
+            <div class="header-actions">
+                <button class="btn btn-primary desktop-only" onclick="openModal()">
+                    <i class="fas fa-plus"></i>
+                    <span>Ajouter</span>
+                </button>
+                <button class="menu-btn mobile-only" onclick="toggleNav()">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Navigation -->
+        <div class="nav-overlay" id="navOverlay" onclick="toggleNav()">
+            <nav class="nav-drawer" onclick="event.stopPropagation()">
+                <div class="nav-header mobile-only">
+                    <div class="logo">
+                        <div class="logo-icon">AXI</div>
+                        <div class="logo-text">
+                            <span class="logo-brand">AXI Select</span>
+                            <span class="logo-project">PROJECT</span>
+                        </div>
+                    </div>
+                    <button class="nav-close" onclick="toggleNav()">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="nav-items">
+                    <div class="nav-item active">
+                        <span class="nav-icon"><i class="fas fa-chart-pie"></i></span>
+                        <span>Dashboard</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon"><i class="fas fa-chart-line"></i></span>
+                        <span>Positions</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon"><i class="fas fa-history"></i></span>
+                        <span>Historique</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon"><i class="fas fa-calculator"></i></span>
+                        <span>Calculateur</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon"><i class="fas fa-newspaper"></i></span>
+                        <span>Calendrier</span>
+                    </div>
+                    <div class="nav-item">
+                        <span class="nav-icon"><i class="fas fa-cog"></i></span>
+                        <span>Paramètres</span>
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <!-- Main -->
+        <main class="main">
+            <div class="content">
+                <!-- Page Header -->
+                <div class="page-header">
+                    <div class="page-title">
+                        <h1>Gestionnaire de Risque</h1>
+                        <p>Allocation optimale selon les leviers AXI</p>
+                    </div>
+                    <div class="market-badge">
+                        <span class="market-dot"></span>
+                        <span class="market-text">Marché <strong>OUVERT</strong></span>
+                    </div>
+                </div>
+
+                <!-- Alerts -->
+                <div id="alert-danger" class="alert alert-danger">
+                    <div class="alert-icon"><i class="fas fa-exclamation-triangle"></i></div>
+                    <div class="alert-content">
+                        <h4>Risque Critique</h4>
+                        <p id="danger-text"></p>
+                    </div>
+                </div>
+                <div id="alert-warning" class="alert alert-warning">
+                    <div class="alert-icon"><i class="fas fa-bolt"></i></div>
+                    <div class="alert-content">
+                        <h4>Attention</h4>
+                        <p id="warning-text"></p>
+                    </div>
+                </div>
+                <div id="alert-success" class="alert alert-success">
+                    <div class="alert-icon"><i class="fas fa-check-circle"></i></div>
+                    <div class="alert-content">
+                        <h4>Allocation Optimale</h4>
+                        <p id="success-text"></p>
+                    </div>
+                </div>
+
+                <!-- Stats -->
+                <div class="stats-grid">
+                    <div class="stat-card info" id="stat-capital-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Capital</span>
+                            <div class="stat-icon"><i class="fas fa-wallet"></i></div>
+                        </div>
+                        <div class="stat-value" id="stat-capital">$50,000</div>
+                        <div class="stat-change">Compte Phase 2</div>
+                    </div>
+                    <div class="stat-card" id="stat-risk-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Risque Total</span>
+                            <div class="stat-icon"><i class="fas fa-shield-alt"></i></div>
+                        </div>
+                        <div class="stat-value" id="stat-risk">$0</div>
+                        <div class="stat-change" id="stat-risk-pct">0%</div>
+                    </div>
+                    <div class="stat-card" id="stat-margin-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Marge Utilisée</span>
+                            <div class="stat-icon"><i class="fas fa-lock"></i></div>
+                        </div>
+                        <div class="stat-value" id="stat-margin">$0</div>
+                        <div class="stat-change" id="stat-margin-pct">100% libre</div>
+                    </div>
+                    <div class="stat-card" id="stat-exposure-card">
+                        <div class="stat-header">
+                            <span class="stat-label">Exposition</span>
+                            <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
+                        </div>
+                        <div class="stat-value" id="stat-exposure">$0</div>
+                        <div class="stat-change" id="stat-leverage">Levier 0x</div>
+                    </div>
+                </div>
+
+                <!-- Config -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="card-title">
+                            <div class="card-icon"><i class="fas fa-sliders-h"></i></div>
+                            Configuration
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Capital (USD)</label>
+                                <input type="number" class="form-input" id="capital" value="50000" min="1000" step="1000">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Risque Max (%)</label>
+                                <input type="number" class="form-input" id="riskPercent" value="1" min="0.1" max="5" step="0.1">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Montant à Risquer</label>
+                                <input type="text" class="form-input readonly" id="riskAmount" readonly value="$500.00">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Two Column -->
+                <div class="two-col">
+                    <!-- Assets -->
+                    <div>
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <div class="card-icon"><i class="fas fa-list"></i></div>
+                                    Positions
+                                </div>
+                                <button class="btn btn-ghost btn-sm desktop-only" onclick="clearAll()">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                            <div class="card-body">
+                                <!-- Mobile Cards -->
+                                <div class="asset-list mobile-only" id="mobileAssets"></div>
+                                
+                                <!-- Desktop Table -->
+                                <div class="table-wrap desktop-only" id="desktopTableWrap">
+                                    <table class="data-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Actif</th>
+                                                <th>Type</th>
+                                                <th>Levier</th>
+                                                <th>SL %</th>
+                                                <th>Risque $</th>
+                                                <th>Position $</th>
+                                                <th>% Cap</th>
+                                                <th></th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="desktopTableBody"></tbody>
+                                    </table>
+                                </div>
+
+                                <!-- Empty -->
+                                <div class="empty-state" id="emptyState">
+                                    <div class="empty-icon">📊</div>
+                                    <h3>Aucune position</h3>
+                                    <p>Ajoutez des actifs pour calculer votre allocation optimale.</p>
+                                    <button class="btn btn-primary mobile-only" onclick="openModal()">
+                                        <i class="fas fa-plus"></i> Ajouter un actif
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis -->
+                    <div>
+                        <!-- Chart -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <div class="card-icon"><i class="fas fa-chart-pie"></i></div>
+                                    Répartition
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="chart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Progress -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="card-title">
+                                    <div class="card-icon"><i class="fas fa-tachometer-alt"></i></div>
+                                    Analyse
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="progress-list">
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span class="progress-label">Risque utilisé</span>
+                                            <span class="progress-value" id="riskUsedText">0%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="riskBar" style="width: 0%; background: var(--success);"></div>
+                                        </div>
+                                    </div>
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span class="progress-label">Marge disponible</span>
+                                            <span class="progress-value" id="marginText">100%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="marginBar" style="width: 0%; background: var(--axi-red);"></div>
+                                        </div>
+                                    </div>
+                                    <div class="progress-item">
+                                        <div class="progress-header">
+                                            <span class="progress-label">Diversification</span>
+                                            <span class="progress-value" id="divText">0 actif</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill" id="divBar" style="width: 0%; background: var(--info);"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Add Asset Modal -->
+    <div class="modal" id="addModal" onclick="closeModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="modal-header">
+                <h3 class="modal-title">Ajouter un Actif</h3>
+                <button class="modal-close" onclick="closeModal()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label">Actifs populaires</label>
+                    <div class="asset-selector" id="assetSelector"></div>
+                </div>
+                
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label class="form-label">Ou saisir manuellement</label>
+                    <input type="text" class="form-input" id="manualAsset" placeholder="Ex: EUR/USD" list="pairsList">
+                </div>
+
+                <div class="form-grid" style="grid-template-columns: 1fr 1fr;">
+                    <div class="form-group">
+                        <label class="form-label">Stop Loss %</label>
+                        <input type="number" class="form-input" id="newSL" value="1" min="0.1" max="10" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Risque $</label>
+                        <input type="number" class="form-input" id="newRisk" value="100" min="10" step="10">
+                    </div>
+                </div>
+
+                <button class="btn btn-primary" onclick="addNewAsset()" style="width: 100%; margin-top: 20px;">
+                    <i class="fas fa-check"></i> Confirmer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Datalist -->
+    <datalist id="pairsList"></datalist>
+
+    <!-- JavaScript -->
+    <script>
+        // AXI Leverage Data
+        const AXI_DATA = {
+            'EUR/USD': { type: 'forex', lev: 30, icon: 'fa-euro-sign' },
+            'GBP/USD': { type: 'forex', lev: 30, icon: 'fa-pound-sign' },
+            'USD/JPY': { type: 'forex', lev: 30, icon: 'fa-yen-sign' },
+            'USD/CHF': { type: 'forex', lev: 30, icon: 'fa-franc-sign' },
+            'AUD/USD': { type: 'forex', lev: 30, icon: 'fa-dollar-sign' },
+            'USD/CAD': { type: 'forex', lev: 30, icon: 'fa-dollar-sign' },
+            'NZD/USD': { type: 'forex', lev: 30, icon: 'fa-dollar-sign' },
+            'EUR/GBP': { type: 'forex', lev: 30, icon: 'fa-exchange-alt' },
+            'EUR/JPY': { type: 'forex', lev: 30, icon: 'fa-exchange-alt' },
+            'GBP/JPY': { type: 'forex', lev: 30, icon: 'fa-exchange-alt' },
+            'XAU/USD': { type: 'metal', lev: 20, icon: 'fa-coins' },
+            'XAG/USD': { type: 'metal', lev: 10, icon: 'fa-coins' },
+            'US30': { type: 'index', lev: 20, icon: 'fa-chart-line' },
+            'US100': { type: 'index', lev: 20, icon: 'fa-chart-line' },
+            'US500': { type: 'index', lev: 20, icon: 'fa-chart-line' },
+            'GER40': { type: 'index', lev: 20, icon: 'fa-chart-line' },
+            'UK100': { type: 'index', lev: 20, icon: 'fa-chart-line' },
+            'BTC/USD': { type: 'crypto', lev: 2, icon: 'fa-bitcoin' },
+            'ETH/USD': { type: 'crypto', lev: 2, icon: 'fa-ethereum' },
+        };
+
+        // State
+        let assets = [];
+        let chart = null;
+        let nextId = 1;
+
+        // Init
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(() => {
+                document.getElementById('loader').classList.add('hidden');
+                document.getElementById('app').classList.add('loaded');
+            }, 800);
+
+            initChart();
+            populateSelectors();
+            setupEvents();
+            
+            // Demo data
+            setTimeout(() => addAsset({ name: 'EUR/USD', sl: 1, risk: 250 }), 1000);
+        });
+
+        function populateSelectors() {
+            const selector = document.getElementById('assetSelector');
+            const popular = ['EUR/USD', 'GBP/USD', 'USD/JPY', 'XAU/USD', 'US30', 'US100'];
+            
+            selector.innerHTML = popular.map(p => {
+                const d = AXI_DATA[p];
+                return `<button class="asset-btn" onclick="selectAsset('${p}')">
+                    <i class="fas ${d.icon}"></i>
+                    <span>${p}</span>
+                </button>`;
+            }).join('');
+
+            const datalist = document.getElementById('pairsList');
+            datalist.innerHTML = Object.keys(AXI_DATA).map(p => 
+                `<option value="${p}">`
+            ).join('');
+        }
+
+        function setupEvents() {
+            document.getElementById('capital').addEventListener('input', calculate);
+            document.getElementById('riskPercent').addEventListener('input', calculate);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('chart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Disponible'],
+                    datasets: [{
+                        data: [100],
+                        backgroundColor: ['#333'],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#888', padding: 15, usePointStyle: true }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Navigation
+        function toggleNav() {
+            document.getElementById('navOverlay').classList.toggle('active');
+        }
+
+        // Modal
+        function openModal() {
+            document.getElementById('addModal').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeModal() {
+            document.getElementById('addModal').classList.remove('active');
+            document.body.style.overflow = '';
+        }
+
+        function closeModalOnOverlay(e) {
+            if (e.target === document.getElementById('addModal')) closeModal();
+        }
+
+        function selectAsset(name) {
+            document.getElementById('manualAsset').value = name;
+            document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+        }
+
+        // Asset Management
+        function addAsset(data) {
+            const name = data?.name || document.getElementById('manualAsset').value || 'EUR/USD';
+            const info = AXI_DATA[name.toUpperCase()] || { type: 'forex', lev: 30, icon: 'fa-chart-line' };
+            
+            const asset = {
+                id: nextId++,
+                name: name.toUpperCase(),
+                type: info.type,
+                lev: info.lev,
+                sl: data?.sl || parseFloat(document.getElementById('newSL').value) || 1,
+                risk: data?.risk || parseFloat(document.getElementById('newRisk').value) || 100
+            };
+            
+            assets.push(asset);
+            render();
+            calculate();
+            
+            // Reset
+            document.getElementById('manualAsset').value = '';
+            document.querySelectorAll('.asset-btn').forEach(b => b.classList.remove('active'));
+            closeModal();
+        }
+
+        function addNewAsset() {
+            addAsset();
+        }
+
+        function removeAsset(id) {
+            assets = assets.filter(a => a.id !== id);
+            render();
+            calculate();
+        }
+
+        function updateAsset(id, field, val) {
+            const a = assets.find(x => x.id === id);
+            if (!a) return;
+            
+            if (field === 'name') {
+                a.name = val.toUpperCase();
+                const info = AXI_DATA[a.name] || { type: 'forex', lev: 30 };
+                a.type = info.type;
+                a.lev = info.lev;
+            } else {
+                a[field] = parseFloat(val) || 0;
+            }
+            render();
+            calculate();
+        }
+
+        // Render
+        function render() {
+            const hasAssets = assets.length > 0;
+            document.getElementById('emptyState').style.display = hasAssets ? 'none' : 'flex';
+            document.getElementById('mobileAssets').style.display = hasAssets ? 'flex' : 'none';
+            document.getElementById('desktopTableWrap').style.display = hasAssets ? 'block' : 'none';
+
+            // Mobile
+            document.getElementById('mobileAssets').innerHTML = assets.map(a => `
+                <div class="asset-card">
+                    <button class="asset-remove" onclick="removeAsset(${a.id})"><i class="fas fa-times"></i></button>
+                    <div class="asset-header">
+                        <span class="asset-symbol">${a.name}</span>
+                        <span class="asset-type ${a.type}">${a.type}</span>
+                    </div>
+                    <div class="asset-grid">
+                        <div class="asset-field">
+                            <span class="asset-field-label">Levier</span>
+                            <span class="asset-field-value">1:${a.lev}</span>
+                        </div>
+                        <div class="asset-field">
+                            <span class="asset-field-label">SL %</span>
+                            <input type="number" class="asset-input" value="${a.sl}" 
+                                onchange="updateAsset(${a.id}, 'sl', this.value)">
+                        </div>
+                        <div class="asset-field">
+                            <span class="asset-field-label">Risque $</span>
+                            <input type="number" class="asset-input" value="${a.risk}" 
+                                onchange="updateAsset(${a.id}, 'risk', this.value)">
+                        </div>
+                        <div class="asset-field">
+                            <span class="asset-field-label">Position</span>
+                            <span class="asset-field-value" id="m-pos-${a.id}">-</span>
+                        </div>
+                    </div>
+                    <div class="asset-results">
+                        <div class="asset-result">
+                            <div class="asset-result-label">Position</div>
+                            <div class="asset-result-value" id="m-res-pos-${a.id}">-</div>
+                        </div>
+                        <div class="asset-result">
+                            <div class="asset-result-label">Marge</div>
+                            <div class="asset-result-value" id="m-res-mar-${a.id}">-</div>
+                        </div>
+                        <div class="asset-result">
+                            <div class="asset-result-label">% Cap</div>
+                            <div class="asset-result-value" id="m-res-pct-${a.id}">-</div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+
+            // Desktop
+            document.getElementById('desktopTableBody').innerHTML = assets.map(a => `
+                <tr>
+                    <td><input type="text" class="table-input" value="${a.name}" 
+                        onchange="updateAsset(${a.id}, 'name', this.value)" list="pairsList"></td>
+                    <td><span class="asset-type ${a.type}">${a.type}</span></td>
+                    <td>1:${a.lev}</td>
+                    <td><input type="number" class="table-input" value="${a.sl}" 
+                        onchange="updateAsset(${a.id}, 'sl', this.value)"></td>
+                    <td><input type="number" class="table-input" value="${a.risk}" 
+                        onchange="updateAsset(${a.id}, 'risk', this.value)"></td>
+                    <td id="d-pos-${a.id}">-</td>
+                    <td id="d-pct-${a.id}">-</td>
+                    <td><button class="btn btn-ghost" onclick="removeAsset(${a.id})" style="color: var(--danger);">
+                        <i class="fas fa-trash"></i>
+                    </button></td>
+                </tr>
+            `).join('');
+        }
+
+        // Calculate
+        function calculate() {
+            const capital = parseFloat(document.getElementById('capital').value) || 0;
+            const riskPct = parseFloat(document.getElementById('riskPercent').value) || 1;
+            const maxRisk = capital * riskPct / 100;
+
+            document.getElementById('riskAmount').value = '$' + maxRisk.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2});
+            document.getElementById('stat-capital').textContent = '$' + capital.toLocaleString('en-US');
+
+            let totalPos = 0, totalMar = 0, totalRisk = 0, totalLev = 0;
+
+            const labels = [], data = [], colors = ['#E31837', '#2979FF', '#00C853', '#FFB300', '#FF1744', '#8B5CF6'];
+
+            assets.forEach((a, i) => {
+                const slDec = a.sl / 100;
+                const pos = slDec > 0 ? (a.risk * a.lev) / (slDec * 100) : 0;
+                const mar = pos / a.lev;
+                const pct = capital > 0 ? (pos / capital) * 100 : 0;
+
+                totalPos += pos;
+                totalMar += mar;
+                totalRisk += a.risk;
+                totalLev += pos * a.lev;
+
+                // Update mobile
+                const mPos = document.getElementById(`m-pos-${a.id}`);
+                if (mPos) {
+                    mPos.textContent = '$' + (pos / 1000).toFixed(1) + 'K';
+                    document.getElementById(`m-res-pos-${a.id}`).textContent = '$' + (pos / 1000).toFixed(1) + 'K';
+                    document.getElementById(`m-res-mar-${a.id}`).textContent = '$' + mar.toFixed(0);
+                    document.getElementById(`m-res-pct-${a.id}`).textContent = pct.toFixed(1) + '%';
+                }
+
+                // Update desktop
+                const dPos = document.getElementById(`d-pos-${a.id}`);
+                if (dPos) {
+                    dPos.textContent = '$' + pos.toLocaleString('en-US', {maximumFractionDigits: 0});
+                    document.getElementById(`d-pct-${a.id}`).textContent = pct.toFixed(2) + '%';
+                }
+
+                if (pos > 0) {
+                    labels.push(a.name);
+                    data.push(pos);
+                }
+            });
+
+            const avgLev = totalPos > 0 ? totalLev / totalPos : 0;
+            const riskUsed = capital > 0 ? (totalRisk / capital) * 100 : 0;
+            const marUsed = capital > 0 ? (totalMar / capital) * 100 : 0;
+
+            // Stats
+            document.getElementById('stat-risk').textContent = '$' + totalRisk.toFixed(0);
+            document.getElementById('stat-risk-pct').textContent = riskUsed.toFixed(2) + '%';
+            document.getElementById('stat-risk-pct').className = 'stat-change ' + (riskUsed > riskPct ? 'negative' : 'positive');
+            
+            document.getElementById('stat-margin').textContent = '$' + totalMar.toFixed(0);
+            document.getElementById('stat-margin-pct').textContent = (100 - marUsed).toFixed(0) + '% libre';
+            
+            document.getElementById('stat-exposure').textContent = '$' + totalPos.toLocaleString('en-US', {maximumFractionDigits: 0});
+            document.getElementById('stat-leverage').textContent = 'Levier ' + avgLev.toFixed(1) + 'x';
+
+            // Card colors
+            document.getElementById('stat-risk-card').className = 'stat-card ' + (riskUsed > riskPct * 1.1 ? 'danger' : riskUsed > riskPct * 0.9 ? 'warning' : 'info');
+            document.getElementById('stat-margin-card').className = 'stat-card ' + (marUsed > 80 ? 'danger' : marUsed > 50 ? 'warning' : 'info');
+
+            // Progress
+            const riskUsage = Math.min((riskUsed / riskPct) * 100, 100);
+            document.getElementById('riskUsedText').textContent = riskUsage.toFixed(0) + '%';
+            document.getElementById('riskBar').style.width = riskUsage + '%';
+            document.getElementById('riskBar').style.background = riskUsed > riskPct ? 'var(--danger)' : 'var(--success)';
+
+            document.getElementById('marginText').textContent = (100 - marUsed).toFixed(0) + '% libre';
+            document.getElementById('marginBar').style.width = marUsed + '%';
+            document.getElementById('marginBar').style.background = marUsed > 50 ? 'var(--danger)' : 'var(--axi-red)';
+
+            document.getElementById('divText').textContent = assets.length + ' actif' + (assets.length > 1 ? 's' : '');
+            document.getElementById('divBar').style.width = Math.min(assets.length * 25, 100) + '%';
+
+            // Chart
+            if (data.length > 0) {
+                chart.data.labels = [...labels, 'Disponible'];
+                chart.data.datasets[0].data = [...data, Math.max(0, capital - totalPos)];
+                chart.data.datasets[0].backgroundColor = [...colors.slice(0, data.length), '#333'];
+            } else {
+                chart.data.labels = ['Disponible'];
+                chart.data.datasets[0].data = [capital];
+                chart.data.datasets[0].backgroundColor = ['#333'];
+            }
+            chart.update();
+
+            // Alerts
+            const danger = document.getElementById('alert-danger');
+            const warning = document.getElementById('alert-warning');
+            const success = document.getElementById('alert-success');
+
+            danger.classList.remove('show');
+            warning.classList.remove('show');
+            success.classList.remove('show');
+
+            if (riskUsed > riskPct * 1.05) {
+                danger.classList.add('show');
+                document.getElementById('danger-text').textContent = `Vous dépassez de ${(riskUsed - riskPct).toFixed(2)}% le risque maximum autorisé.`;
+            } else if (marUsed > 80) {
+                danger.classList.add('show');
+                document.getElementById('danger-text').textContent = `Marge utilisée à ${marUsed.toFixed(0)}%. Risque de margin call.`;
+            } else if (riskUsed > riskPct * 0.9 || marUsed > 50) {
+                warning.classList.add('show');
+                document.getElementById('warning-text').textContent = `Surveillez vos positions: risque à ${(riskUsed/riskPct*100).toFixed(0)}% du maximum.`;
+            } else if (assets.length > 0) {
+                success.classList.add('show');
+                document.getElementById('success-text').textContent = `Portfolio optimal: ${assets.length} actifs, risque sous contrôle.`;
+            }
+        }
+
+        function clearAll() {
+            if (!confirm('Supprimer toutes les positions ?')) return;
+            assets = [];
+            render();
+            calculate();
+        }
+    </script>
+</body>
+</html>
